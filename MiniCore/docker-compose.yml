@@ -1,0 +1,49 @@
+version: '3.9'
+services:
+  mysql-minicore:
+    image: mysql:8.0.39
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: MiniCore
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql-minicore-data:/var/lib/mysql
+      - ./dumps/minicore_dump.sql:/docker-entrypoint-initdb.d/minicore_dump.sql:ro
+    networks:
+      - dev-net
+
+
+  minicore-back:
+    build:
+      context: ./MiniCore Backend
+      dockerfile: Dockerfile
+    depends_on:
+      - mysql-minicore
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-minicore:3306/MiniCore
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    ports:
+      - "8082:8080"
+    networks:
+      - dev-net
+
+  minicore-front:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - minicore-back
+    ports:
+      - "5174:5173"
+    networks:
+      - dev-net
+
+networks:
+  dev-net:
+    external: true
+
+volumes:
+  mysql-minicore-data:

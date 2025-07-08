@@ -1,0 +1,48 @@
+version: '3.9'
+services:
+  mysql-core:
+    image: mysql:8.0.39
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: IngenieriaWeb
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-core-data:/var/lib/mysql
+      - ./dumps/ingenieriaweb_dump.sql:/docker-entrypoint-initdb.d/ingenieriaweb_dump.sql:ro
+    networks:
+      - dev-net
+
+  core-back:
+    build:
+      context: ./Backend-Core
+      dockerfile: Dockerfile
+    depends_on:
+      - mysql-core
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-core:3306/IngenieriaWeb
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    ports:
+      - "8081:8080"
+    networks:
+      - dev-net
+
+  core-front:
+    build:
+      context: ./Frontend-Core
+      dockerfile: Dockerfile
+    depends_on:
+      - core-back
+    ports:
+      - "5173:5173"
+    networks:
+      - dev-net
+
+networks:
+  dev-net:
+    external: true
+
+volumes:
+  mysql-core-data:
